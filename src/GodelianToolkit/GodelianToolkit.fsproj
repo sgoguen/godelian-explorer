@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup><Compile Include="IndentingPrinter.fs" /><Compile Include="Core.fs" /><Compile Include="AutoConstructor.fs" />
+    <Compile Include="Library.fs" />
+  </ItemGroup>
+
+</Project>
