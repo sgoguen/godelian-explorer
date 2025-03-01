@@ -5,6 +5,10 @@
     <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Model.fs" />
+    <Compile Include="Views/Counter.fs" />
+    <Compile Include="Views/Homepage.fs" />
+    <Compile Include="Views/Dataviewer.fs" />
     <Compile Include="Main.fs" />
     <Compile Include="Startup.fs" />
   </ItemGroup>
