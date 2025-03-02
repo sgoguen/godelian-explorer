@@ -4,18 +4,9 @@ open System.Net.Http
 open Microsoft.AspNetCore.Components
 open Elmish
 open Bolero
-open Bolero.Html
-
-
-
-module Views =
-
-
-    let view = Views.Application.view
 
 open Model
 open Messages
-open Views
 
 type MyApp() =
     inherit ProgramComponent<Model, Message>()
@@ -28,5 +19,5 @@ type MyApp() =
     override this.Program =
         let update = update this.HttpClient
 
-        Program.mkProgram (fun _ -> initModel, Cmd.ofMsg GetBooks) update view
+        Program.mkProgram (fun _ -> initModel, Cmd.ofMsg GetBooks) update Views.Application.view
         |> Program.withRouter router

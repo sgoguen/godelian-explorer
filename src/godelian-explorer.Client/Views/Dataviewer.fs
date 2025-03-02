@@ -9,7 +9,7 @@ module DataViewer =
     open Model.Messages
 
 
-    let dataPage model dispatch =
+    let dataPage (model: Model) (dispatch: Message -> unit) =
         concat {
             h1 {
                 attr.``class`` "title"
@@ -140,8 +140,8 @@ module Application =
                     cond model.page
                     <| function
                         | Home -> homePage model dispatch
-                        | Counter -> counterPage model dispatch
                         | Data -> dataPage model dispatch
+                        | Counter -> counter model dispatch
 
                     div {
                         attr.id "notification-area"

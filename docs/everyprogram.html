@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Every Program</title>
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+</head>
+<body>
+    <header>
+        <h1>Every λ Program</h1>
+        <nav>
+            <a href="index.html">Explorer</a>
+            <a href="about.html">About</a>
+            <a href="https://github.com/everyprogram/everyprogram.github.io">GitHub</a>
+        </nav>
+    </header>
+
+    <div class="container" id="container">
+        <div id="virtualContent">
+            <table>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer>
+        Scroll to explore all possible lambda terms
+    </footer>
+
+    <script>
+        // Term type definitions and constructors
+        const Term = {
+            IDX: (i) => ({ type: 'IDX', index: i }),
+            ABS: (t) => ({ type: 'ABS', body: t }),
+            APP: (f, a) => ({ type: 'APP', func: f, arg: a })
+        };
+
+        // BigInt square root implementation
+        const sqrt = (z) => {
+            if (z < 0n) throw new Error("Cannot compute sqrt of negative");
+            if (z === 0n) return 0n;
+            let x = z;
+            let y = (x + z/x) >> 1n;
+            while (y < x) {
+                x = y;
+                y = (x + z/x) >> 1n;
+            }
+            return x;
+        };
+
+        // Rosenberg-Strong pairing functions
+        const unpair = (z) => {
+            const m = sqrt(z);
+            const m2 = m * m;
+            if (z - m2 < m) {
+                return [z - m2, m];
+            } else {
+                return [m, m2 + 2n * m - z];
+            }
+        };
+
+        // Convert bigint to lambda term
+        const intToTerm = (n) => {
+            const termFromIntRec = (maxIndex, n) => {
+                if (n < 0n) throw new Error("Negative integer");
+                if (n <= maxIndex) return Term.IDX(Number(n));
+                
+                const n2 = n - (maxIndex + 1n);
+                const opt = n2 % 2n;
+                const n3 = n2 / 2n;
+                
+                if (opt === 0n) {
+                    return Term.ABS(termFromIntRec(maxIndex + 1n, n3));
+                } else {
+                    const [x, y] = unpair(n3);
+                    return Term.APP(
+                        termFromIntRec(maxIndex, x),
+                        termFromIntRec(maxIndex, y)
+                    );
+                }
+            };
+            
+            return termFromIntRec(-1n, n);
+        };
+
+        function intToVarName(i) {
+            return String.fromCharCode(97 + i);
+        }
+
+        // Pretty print lambda terms
+        function termToString(term) {
+
+            return termToStringRec(term, 0);
+
+            function termToStringRec(term, bound) {
+                switch (term.type) {
+                    case 'IDX':
+                        return intToVarName(term.index)
+                    case 'ABS':
+                        return `(λ${intToVarName(bound)}.${termToStringRec(term.body, bound + 1)})`;
+                    case 'APP':
+                        return `(${termToStringRec(term.func, bound)}${termToStringRec(term.arg, bound)})`;
+                }
+            }
+        };
+
+        // Virtual scrolling implementation
+        const ROW_HEIGHT = 40;
+        const BUFFER_SIZE = 50;
+        let startIndex = 0n;
+        
+        const container = document.getElementById('container');
+        const virtualContent = document.getElementById('virtualContent');
+        const tableBody = document.getElementById('tableBody');
+
+        function createRow(index) {
+            try {
+                const term = intToTerm(index);
+                const termStr = termToString(term);
+                return `
+                    <tr>
+                        <td>${index}</td>
+                        <td>${termStr}</td>
+                    </tr>
+                `;
+            } catch (e) {
+                return `
+                    <tr>
+                        <td>${index}</td>
+                        <td>Invalid term</td>
+                    </tr>
+                `;
+            }
+        }
+
+        function updateContent() {
+            const rows = [];
+            for (let i = 0; i < BUFFER_SIZE; i++) {
+                const index = startIndex + BigInt(i);
+                rows.push(createRow(index));
+            }
+            tableBody.innerHTML = rows.join('');
+            virtualContent.style.transform = `translateY(${Number(startIndex) * ROW_HEIGHT}px)`;
+        }
+
+        let ticking = false;
+        container.addEventListener('scroll', () => {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    const scrollTop = container.scrollTop;
+                    const newStartRow = Math.floor(scrollTop / ROW_HEIGHT);
+                    const newStartIndex = BigInt(newStartRow);
+                    
+                    if (newStartIndex !== startIndex) {
+                        startIndex = newStartIndex;
+                        updateContent();
+                    }
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        });
+
+        // Initial render
+        updateContent();
+    </script>
+</body>
+</html>

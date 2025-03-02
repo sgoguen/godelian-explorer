@@ -10,12 +10,44 @@ type Page =
     | [<EndPoint "/counter">] Counter
     | [<EndPoint "/data">] Data
 
+[<AbstractClass>]
+type State() =
+    abstract member SendMessage: obj -> unit
+
+type State<'Value, 'Message>(initialValue: 'Value, update: 'Message -> 'Value -> 'Value) =
+    inherit State()
+    let mutable state = initialValue
+    member this.Update(message: 'Message) = state <- update message state
+
+    override this.SendMessage(message: obj) =
+        match message with
+        | :? 'Message as msg -> this.Update msg
+        | _ -> failwithf "Invalid message type: %O" message
+
+module Counter =
+    type CounterModel = { count: int }
+
+    let initCounterModel = { count = 0 }
+
+    type CounterMessage =
+        | Incr
+        | Decr
+        | SetCount of int
+
+    let update message model =
+        match message with
+        | Incr -> { model with count = model.count + 1 }
+        | Decr -> { model with count = model.count - 1 }
+        | SetCount value -> { model with count = value }
+
 /// The Elmish application's model.
 type Model =
     { page: Page
-      counter: int
+      counter: Counter.CounterModel
+      //   counter: int
       books: Book[] option
-      error: string option }
+      error: string option
+      miscState: Map<string, State> }
 
 and Book =
     { title: string
@@ -25,9 +57,10 @@ and Book =
 
 let initModel =
     { page = Home
-      counter = 0
+      counter = Counter.initCounterModel
       books = None
-      error = None }
+      error = None
+      miscState = Map.empty }
 
 module Messages =
 
@@ -38,9 +71,7 @@ module Messages =
     /// The Elmish application's update messages.
     type Message =
         | SetPage of Page
-        | Increment
-        | Decrement
-        | SetCounter of int
+        | CounterMsg of Counter.CounterMessage
         | GetBooks
         | GotBooks of Book[]
         | Error of exn
@@ -50,24 +81,17 @@ module Messages =
 
     let update (http: HttpClient) message model =
         match message with
-        | SetPage page ->
-            { model with page = page }, Cmd.none
-
-        | Increment ->
-            { model with counter = model.counter + 10 }, Cmd.none
-        | Decrement ->
-            { model with counter = model.counter - 1 }, Cmd.none
-        | SetCounter value ->
-            { model with counter = value }, Cmd.none
-
+        | SetPage page -> { model with page = page }, Cmd.none
         | GetBooks ->
-            let getBooks() = http.GetFromJsonAsync<Book[]>("/books.json")
+            let getBooks () =
+                http.GetFromJsonAsync<Book[]>("/books.json")
+
             let cmd = Cmd.OfTask.either getBooks () GotBooks Error
             { model with books = None }, cmd
-        | GotBooks books ->
-            { model with books = Some books }, Cmd.none
+        | GotBooks books -> { model with books = Some books }, Cmd.none
 
-        | Error exn ->
-            { model with error = Some exn.Message }, Cmd.none
-        | ClearError ->
-            { model with error = None }, Cmd.none    
+        | Error exn -> { model with error = Some exn.Message }, Cmd.none
+        | ClearError -> { model with error = None }, Cmd.none
+        | CounterMsg msg ->
+            let c2 = Counter.update msg model.counter
+            { model with counter = c2 }, Cmd.none

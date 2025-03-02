@@ -8,8 +8,12 @@ module Counter =
     open Model
     open Model.Messages
 
+    open Model.Counter
+
     open GodelianToolkit
     open GodelianToolkit.AutoConstructor
+    open GodelianExplorer.Client.Components.Basic
+    open Bolero
 
     type Term =
         | Value of bigint
@@ -44,7 +48,7 @@ module Counter =
 
             p {
                 button {
-                    on.click (fun _ -> dispatch Decrement)
+                    on.click (fun _ -> dispatch Decr)
                     attr.``class`` "button"
                     "-"
                 }
@@ -53,18 +57,18 @@ module Counter =
                     attr.``type`` "number"
                     attr.id "counter"
                     attr.``class`` "input"
-                    bind.input.int model.counter (fun v -> dispatch (SetCounter v))
+                    bind.input.int model.count (fun v -> dispatch (SetCount v))
                 }
 
                 button {
-                    on.click (fun _ -> dispatch Increment)
+                    on.click (fun _ -> dispatch Incr)
                     attr.``class`` "button"
                     "+"
                 }
             }
 
             div {
-                let term = pick model.counter
+                let term = pick (bigint model.count)
 
                 h2 {
                     attr.``class`` "subtitle"
@@ -77,3 +81,15 @@ module Counter =
                 }
             }
         }
+
+    type CounterComponent() =
+        inherit ElmishComponent<CounterModel, CounterMessage>()
+
+        override this.ShouldRender(oldModel, newModel) = oldModel <> newModel
+
+        override this.View model dispatch = counterPage model dispatch
+
+    let mapCommands (dispatch: Model.Messages.Message -> unit) (m: CounterMessage) : unit = dispatch (CounterMsg m)
+
+    let inline counter (model: Model) (dispatch: Model.Messages.Message -> unit) : Node =
+        ecomp<CounterComponent, _, _> model.counter (mapCommands dispatch) { attr.empty () }
