@@ -2,8 +2,8 @@ namespace Views
 
 module Counter =
 
-
     open Bolero.Html
+    open Bolero.Virtualize
 
     open Model
     open Model.Messages
@@ -14,6 +14,26 @@ module Counter =
     open GodelianToolkit.AutoConstructor
     open GodelianExplorer.Client.Components.Basic
     open Bolero
+    open System
+    open System.Collections.Generic
+
+    type Items() =
+        let items =
+            seq {
+                for i in 0..999999 do
+                    yield i
+            }
+
+        interface IReadOnlyCollection<int> with
+            member this.Count = 1000000
+
+        interface IEnumerable<int> with
+            member this.GetEnumerator() = items.GetEnumerator()
+
+            member this.GetEnumerator() =
+                items.GetEnumerator() :> Collections.IEnumerator
+
+    let items = Items()
 
     type Term =
         | Value of bigint
@@ -36,48 +56,48 @@ module Counter =
                 toNode r
             }
 
-    //  Now, let's see what we can do to implement it for this...
+    // Godelian constructor for terms
     let pick = createGodelianConstructorFor<Term> ()
 
     let counterPage model dispatch =
         concat {
             h1 {
                 attr.``class`` "title"
-                "A simple counter!!!!"
-            }
-
-            p {
-                button {
-                    on.click (fun _ -> dispatch Decr)
-                    attr.``class`` "button"
-                    "-"
-                }
-
-                input {
-                    attr.``type`` "number"
-                    attr.id "counter"
-                    attr.``class`` "input"
-                    bind.input.int model.count (fun v -> dispatch (SetCount v))
-                }
-
-                button {
-                    on.click (fun _ -> dispatch Incr)
-                    attr.``class`` "button"
-                    "+"
-                }
+                "Term Explorer"
             }
 
             div {
-                let term = pick (bigint model.count)
-
-                h2 {
-                    attr.``class`` "subtitle"
-                    "Term"
-                }
-
                 div {
-                    attr.``class`` "box"
-                    toNode term
+                    table {
+                        attr.``class`` "bordered full-width"
+
+                        thead {
+                            tr {
+                                th { 
+                                    // Width should be just enough to show the index
+                                    attr.style $"width: 50px;"
+                                    "Index" 
+                                
+                                }
+                                th { "Term" }
+                            }
+                        }
+
+                        tbody {
+
+                            virtualize.comp {
+                                virtualize.itemSize 50.0f // Height of each item in pixels
+                                let! i = virtualize.items items
+                                let term = pick (bigint i)
+
+                                tr {
+                                    attr.style $"height: 2em;"
+                                    td { string i }
+                                    td { toNode term }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

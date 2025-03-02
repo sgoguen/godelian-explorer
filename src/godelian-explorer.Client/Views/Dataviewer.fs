@@ -1,61 +1,6 @@
 namespace Views
 
-module DataViewer =
 
-    open Bolero
-    open Bolero.Html
-
-    open Model
-    open Model.Messages
-
-
-    let dataPage (model: Model) (dispatch: Message -> unit) =
-        concat {
-            h1 {
-                attr.``class`` "title"
-                "Download data "
-
-                button {
-                    attr.``class`` "button"
-                    on.click (fun _ -> dispatch GetBooks)
-                    "Reload"
-                }
-            }
-
-            table {
-                attr.``class`` "table is-fullwidth"
-
-                thead {
-                    tr {
-                        th { "Title" }
-                        th { "Author" }
-                        th { "Published" }
-                        th { "ISBN" }
-                    }
-                }
-
-                tbody {
-                    cond model.books
-                    <| function
-                        | None ->
-                            tr {
-                                td {
-                                    attr.colspan 4
-                                    "Downloading book list..."
-                                }
-                            }
-                        | Some books ->
-                            forEach books
-                            <| fun book ->
-                                tr {
-                                    td { book.title }
-                                    td { book.author }
-                                    td { book.publishDate.ToString("yyyy-MM-dd") }
-                                    td { book.isbn }
-                                }
-                }
-            }
-        }
 
 
 module Common =
@@ -103,8 +48,6 @@ module Application =
     open Common
     open Views.Homepage
     open Views.Counter
-    open DataViewer
-
 
     let view model dispatch =
         div {
@@ -123,8 +66,7 @@ module Application =
                         ul {
                             attr.``class`` "menu-list"
                             menuItem model Home "Home"
-                            menuItem model Counter "Counter"
-                            menuItem model Data "Download data"
+                            menuItem model Counter "Term Explorer"
                         }
                     }
                 }
@@ -140,7 +82,6 @@ module Application =
                     cond model.page
                     <| function
                         | Home -> homePage model dispatch
-                        | Data -> dataPage model dispatch
                         | Counter -> counter model dispatch
 
                     div {

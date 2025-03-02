@@ -8,7 +8,6 @@ open Bolero
 type Page =
     | [<EndPoint "/">] Home
     | [<EndPoint "/counter">] Counter
-    | [<EndPoint "/data">] Data
 
 [<AbstractClass>]
 type State() =
@@ -72,8 +71,6 @@ module Messages =
     type Message =
         | SetPage of Page
         | CounterMsg of Counter.CounterMessage
-        | GetBooks
-        | GotBooks of Book[]
         | Error of exn
         | ClearError
 
@@ -82,13 +79,6 @@ module Messages =
     let update (http: HttpClient) message model =
         match message with
         | SetPage page -> { model with page = page }, Cmd.none
-        | GetBooks ->
-            let getBooks () =
-                http.GetFromJsonAsync<Book[]>("/books.json")
-
-            let cmd = Cmd.OfTask.either getBooks () GotBooks Error
-            { model with books = None }, cmd
-        | GotBooks books -> { model with books = Some books }, Cmd.none
 
         | Error exn -> { model with error = Some exn.Message }, Cmd.none
         | ClearError -> { model with error = None }, Cmd.none
