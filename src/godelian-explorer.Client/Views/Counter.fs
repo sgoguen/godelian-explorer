@@ -80,6 +80,11 @@ module Counter =
                                 
                                 }
                                 th { "Term" }
+                                th { "Pair" }
+                                th { "Ordered Pair" }
+                                th { "Set" }
+                                th { "Unordered List" }
+                                th { "Ordered List" }
                             }
                         }
 
@@ -88,12 +93,23 @@ module Counter =
                             virtualize.comp {
                                 virtualize.itemSize 50.0f // Height of each item in pixels
                                 let! i = virtualize.items items
-                                let term = pick (bigint i)
+                                let i = bigint i
+                                let term = pick i
+                                let pair = i |> Mappings.nat2pair |> sprintf "%A"
+                                let orderedPair = i |> Mappings.nat2orderedpair |> sprintf "%A"
+                                let setI = i |> Mappings.nat2set |> sprintf "%A"
+                                let listI = i |> Mappings.nat2unorderedlist |> sprintf "%A"
+                                let orderedListI = i |> Mappings.nat2orderedlist |> sprintf "%A"
 
                                 tr {
                                     attr.style $"height: 2em;"
                                     td { string i }
                                     td { toNode term }
+                                    td { string pair }
+                                    td { string orderedPair }
+                                    td { string setI }
+                                    td { string listI }
+                                    td { string orderedListI }
                                 }
                             }
                         }
